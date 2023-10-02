@@ -42,9 +42,13 @@ services:
       # Host region end
       # Database region start
       KC_DB: ${KEYCLOAK_DB_VENDOR:-postgres}
-      KC_DB_ADDR: ${KEYCLOAK_DB_ADDR:-keycloak_example.keycloak_postgres}
+      KC_DB_ADDR:
+        # By default, we use database address by shared network, but you can start keycloak locally and pass its address
+        ${KEYCLOAK_DB_ADDR:-keycloak_example.keycloak_postgres}
       KC_DB_PORT: ${KEYCLOAK_DB_PORT:-5432}
-      KC_DB_URL: ${KEYCLOAK_DB_URL:-jdbc:postgresql://keycloak_example.keycloak_postgres/keycloak/}
+      KC_DB_URL:
+        # By default, JDBC URL is creating by yourself, but you can pass variant in `KEYCLOAK_JDBC_URL`
+        ${KEYCLOAD_JDBC_URL:-jdbc:${KEYCLOAK_JDBC_VENDOR:-postgresql}://$${KC_DB_ADDR}:$${KC_DB_PORT}/${KEYCLOAK_DB_NAME}?characterEncoding=UTF-8}
       KC_DB_USERNAME: ${KEYCLOAK_DB_USERNAME:-$${POSTGRES_USER}}
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-$${POSTGRES_PASSWORD}}
       # Database region end
