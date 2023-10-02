@@ -33,6 +33,8 @@ services:
     ports:
       - 3000:8080
       - 8080:8080
+    networks:
+      - keycloak_example.keycloak_postgres.network
     environment:
       # Host region start
       KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}
@@ -55,8 +57,8 @@ services:
       KC_FEATURES: ${KEYCLOAK_FEATURES}
       KC_HEALTH_ENABLED: true
       KC_METRICS_ENABLED: ${KEYCLOAK_METRICS_ENABLED:-true}
-    networks:
-      - keycloak_example.keycloak_postgres.network
+    volumes:
+      - keycloak_example.keycloak.data:/opt/keycloak/data/import:rw
     depends_on:
       keycloak_postgres:
         condition: service_healthy
@@ -64,6 +66,7 @@ services:
 
 volumes:
   keycloak_example.keycloak_postgres.data: {}
+  keycloak_example.keycloak.data: {}
 
 networks:
   keycloak_example.keycloak_postgres.network: {}
