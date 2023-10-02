@@ -1,23 +1,23 @@
 version: "3.9"
 
 services:
-  postgres:
-    container_name: keycloak_example.postgres
+  keycloak_postgres:
+    container_name: keycloak_example.keycloak_postgres
     image: postgres:15-alpine
-    hostname: keycloak_example.postgres
+    hostname: keycloak_example.keycloak_postgres
     restart: unless-stopped
     expose:
       - 5432
     ports:
       - 127.0.0.1:15432:5432
     networks:
-      - keycloak_example.postgres.network
+      - keycloak_example.keycloak_postgres.network
     environment:
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD
       POSTGRES_USER: ${POSTGRES_USER:-$USER}
       POSTGRES_DB: ${POSTGRES_DB:-keycloak}
     volumes:
-      - keycloak_example.postgres.data:/var/lib/postgresql/users:rw
+      - keycloak_example.keycloak_postgres.data:/var/lib/postgresql/users:rw
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       interval: 5s
@@ -42,9 +42,9 @@ services:
       # Host region end
       # Database region start
       KC_DB: ${KEYCLOAK_DB_VENDOR:-postgres}
-      KC_DB_ADDR: ${KEYCLOAK_DB_ADDR:-keycloak_example.postgres}
+      KC_DB_ADDR: ${KEYCLOAK_DB_ADDR:-keycloak_example.keycloak_postgres}
       KC_DB_PORT: ${KEYCLOAK_DB_PORT:-5432}
-      KC_DB_URL: ${KEYCLOAK_DB_URL:-jdbc:postgresql://keycloak_example.postgres/keycloak/}
+      KC_DB_URL: ${KEYCLOAK_DB_URL:-jdbc:postgresql://keycloak_example.keycloak_postgres/keycloak/}
       KC_DB_USERNAME: ${KEYCLOAK_DB_USERNAME:-$${POSTGRES_USER}}
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-$${POSTGRES_PASSWORD}}
       # Database region end
@@ -52,14 +52,14 @@ services:
       KC_HEALTH_ENABLED: true
       KC_METRICS_ENABLED: ${KEYCLOAK_METRICS_ENABLED:-true}
     networks:
-      - keycloak_example.postgres.network
+      - keycloak_example.keycloak_postgres.network
     depends_on:
-      postgres:
+      keycloak_postgres:
         condition: service_healthy
     command: ['start-dev']
 
 volumes:
-  keycloak_example.postgres.data: {}
+  keycloak_example.keycloak_postgres.data: {}
 
 networks:
-  keycloak_example.postgres.network: {}
+  keycloak_example.keycloak_postgres.network: {}
