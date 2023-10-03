@@ -6,15 +6,13 @@ services:
     hostname: keycloak_example.api
     build:
       context: .
-      dockerfile: ./Dockerfile
     restart: unless-stopped
     expose:
       - 5000
     ports:
       - 5000:5000
     depends_on:
-      keycloak:
-        condition: service_healthy
+      - keycloak
 
   keycloak_postgres:
     container_name: keycloak_example.keycloak_postgres
@@ -37,7 +35,7 @@ services:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       interval: 5s
       timeout: 50s
-      retries: 9
+      retries: 10
       start_period: 5s
 
   keycloak:
@@ -70,16 +68,10 @@ services:
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-$${POSTGRES_PASSWORD}}
       # Database region end
       KC_FEATURES: ${KEYCLOAK_FEATURES}
-      KC_HEALTH_ENABLED: true
+      KC_HEALTH_ENABLED: ${KEYCLOAK_HEALTH_ENABLED:-true}
       KC_METRICS_ENABLED: ${KEYCLOAK_METRICS_ENABLED:-true}
     volumes:
       - keycloak_example.keycloak.data:/opt/keycloak/data/import:rw
-    healthcheck:
-      test: ["CMD-SHELL", "curl --head -fsS http://localhost:8080/health/ready"]
-      interval: 5s
-      timeout: 50s
-      retries: 9
-      start_period: 5s
     depends_on:
       keycloak_postgres:
         condition: service_healthy
