@@ -6,6 +6,8 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=on \
     PIP_DEFAULT_TIMEOUT=100
 
+ENV PATH="/opt/venv/bin:$PATH"
+
 FROM python-base as builder-base
 RUN apt-get update \
  && apt-get install -y gcc git
