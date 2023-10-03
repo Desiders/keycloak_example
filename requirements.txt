@@ -1,1 +1,5 @@
 fastapi~=0.103
+adaptix~=3.0.0a5
+orjson~=3.9
+structlog~=23.1
+uvicorn[standard]~=0.23
