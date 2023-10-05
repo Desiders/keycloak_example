@@ -52,8 +52,6 @@ services:
       # Host region start
       KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}
       KC_HOSTNAME_PORT: ${KEYCLOAK_HOSTNAME_PORT:-8080}
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-change_me}
       # Host region end
       # Database region start
       KC_DB: ${KEYCLOAK_DB_VENDOR:-postgres}
@@ -67,15 +65,31 @@ services:
       KC_DB_USERNAME: ${KEYCLOAK_DB_USERNAME:-$${POSTGRES_USER}}
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-$${POSTGRES_PASSWORD}}
       # Database region end
+      # Logging region start
+      KC_LOG_CONSOLE_COLOR: ${KEYCLOAK_LOG_CONSOLE_COLOR:-false}
+      KC_LOG_CONSOLE_OUTPUT: ${KEYCLOAK_LOG_CONSOLE_OUTPUT:-default}
+      KC_LOG_FILE_FORMAT: ${KEYCLOAK_LOG_FILE_FORMAT:-%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n}
+      KC_LOG_LEVEL: ${KEYCLOAK_LOG_LEVEL:-info}
+      # Logging region end
+      # Features region start
       KC_FEATURES: ${KEYCLOAK_FEATURES}
+      # Features region end
+      # Health region start
       KC_HEALTH_ENABLED: ${KEYCLOAK_HEALTH_ENABLED:-true}
+      # Health region end
+      # Metrics region start
       KC_METRICS_ENABLED: ${KEYCLOAK_METRICS_ENABLED:-true}
+      # Metrics region end
+      # Initial data region start
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-change_me}
+      # Initial data region end
     volumes:
       - keycloak_example.keycloak.data:/opt/keycloak/data/import:rw
     depends_on:
       keycloak_postgres:
         condition: service_healthy
-    command: ['start-dev']
+    command: ['${KEYCLOAK_COMMAND:-start-dev}']
 
 volumes:
   keycloak_example.keycloak_postgres.data: {}
