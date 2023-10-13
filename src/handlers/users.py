@@ -22,12 +22,9 @@ async def get_user(
 ) -> OIDCUser:
     logger.info("Getting user")
 
-    if keycloak.openid_configuration is None:
-        logger.debug("OpenID configuration is `None`. Fetching...")
+    openid_configuration = await keycloak.get_openid_configuration()
 
-        await keycloak.fetch_openid_configuration()
-
-    token_endpoint = keycloak.openid_configuration.token_endpoint  # type: ignore
+    token_endpoint = openid_configuration.token_endpoint
 
     user_access_token = await OAuth2PasswordBearer(tokenUrl=token_endpoint)(request)
 
