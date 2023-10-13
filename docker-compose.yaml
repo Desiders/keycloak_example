@@ -11,6 +11,10 @@ services:
       - 5000
     ports:
       - 5000:5000
+    networks:
+      - keycloak_example.keycloak.network
+    env_file:
+      - .env
     depends_on:
       - keycloak
 
@@ -41,12 +45,14 @@ services:
   keycloak:
     container_name: keycloak_example.keycloak
     image: keycloak/keycloak:22.0
-    hostname: keycloak_example.keycloak
+    hostname: keycloak-example.keycloak # Don't use underscores because keycloak causes an error
     restart: unless-stopped
+    expose:
+      - 8080
     ports:
-      - 3000:8080
       - 8080:8080
     networks:
+      - keycloak_example.keycloak.network
       - keycloak_example.keycloak_postgres.network
     environment:
       # Host region start
@@ -97,3 +103,4 @@ volumes:
 
 networks:
   keycloak_example.keycloak_postgres.network: {}
+  keycloak_example.keycloak.network: {}
