@@ -20,6 +20,7 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 FROM python-base as production
 COPY --from=builder-base /opt/venv /opt/venv
+RUN apt-get update && apt-get install -y curl
 
 WORKDIR /app
 COPY ./src /app/src
