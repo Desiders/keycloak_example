@@ -16,8 +16,15 @@ class API:
 
 @dataclass
 class Keycloak:
+    realm_id: str
+    client_id: str
+    client_secret: str
+    admin_client_secret: str
     host: str = "localhost"
+    host_for_api: str = "keycloak-example.keycloak"
     port: int = 8080
+    admin_client_id: str = "admin-cli"
+    callback_url: str = "http://localhost:5000/auth/callback"
 
 
 @dataclass
@@ -35,7 +42,7 @@ class Config:
 
 
 def load_config_from_env() -> Config:
-    raw_path: str = os.environ.get("LOGGING_PATH")
+    raw_path = os.environ.get("LOGGING_PATH")
 
     return Config(
         api=API(
@@ -44,11 +51,23 @@ def load_config_from_env() -> Config:
         ),
         keycloak=Keycloak(
             host=os.environ.get("KEYCLOAK_HOST", "localhost"),
+            host_for_api=os.environ.get(
+                "KEYCLOAK_HOSTNAME_FOR_API", "keycloak-example.keycloak"
+            ),
             port=int(os.environ.get("KEYCLOAK_PORT", 8080)),
+            realm_id=os.environ["KEYCLOAK_REALM_ID"],
+            client_id=os.environ["KEYCLOAK_CLIENT_ID"],
+            client_secret=os.environ["KEYCLOAK_CLIENT_SECRET"],
+            admin_client_id=os.environ.get("KEYCLOAK_ADMIN_CLIENT_ID", "admin-cli"),
+            admin_client_secret=os.environ["KEYCLOAK_ADMIN_CLIENT_SECRET"],
+            callback_url=os.environ.get(
+                "KEYCLOAK_CALLBACK_URL", "http://localhost:5000/auth/callback"
+            ),
         ),
         logging=Logging(
-            render_json_logs=bool(os.environ.get(
-                "LOGGING_RENDER_JSON_LOGS", False)),
+            render_json_logs=bool(
+                os.environ.get("LOGGING_RENDER_JSON_LOGS", "false").lower() == "true"
+            ),
             path=Path(raw_path) if raw_path else None,
             level=os.environ.get("LOGGING_LEVEL", "DEBUG"),
         ),
@@ -77,18 +96,16 @@ def configure_logging(logging_config: Logging) -> None:
         structlog.processors.UnicodeDecoder(),
         structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
     )
-    logging_processors = (
-        structlog.stdlib.ProcessorFormatter.remove_processors_meta,
-    )
+    logging_processors = (structlog.stdlib.ProcessorFormatter.remove_processors_meta,)
 
     if logging_config.render_json_logs:
         logging_console_processors = (
             *logging_processors,
-            structlog.processors.JSONRenderer(orjson.dumps, colors=True),
+            structlog.processors.JSONRenderer(orjson.dumps),
         )
         logging_file_processors = (
             *logging_processors,
-            structlog.processors.JSONRenderer(orjson.dumps, colors=False),
+            structlog.processors.JSONRenderer(orjson.dumps),
         )
     else:
         logging_console_processors = (
@@ -115,7 +132,9 @@ def configure_logging(logging_config: Logging) -> None:
     if logging_path:
         logging_path.parent.mkdir(parents=True, exist_ok=True)
 
-        logging_path = logging_path / "logs.log" if logging_path.is_dir() else logging_path
+        logging_path = (
+            logging_path / "logs.log" if logging_path.is_dir() else logging_path
+        )
 
         file_handler = logging.FileHandler(logging_path)
         file_handler.set_name("file")
