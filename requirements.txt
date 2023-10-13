@@ -3,3 +3,5 @@ adaptix~=3.0.0a5
 orjson~=3.9
 structlog~=23.1
 uvicorn[standard]~=0.23
+aiohttp[speedups]~=3.8
+python-jose~=3.3
