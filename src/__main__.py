@@ -6,12 +6,18 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 
 from .config import API as APIConfig
+from .config import Keycloak as KeycloakConfig
 from .config import configure_logging, load_config_from_env
+from .handlers import auth_router, user_router
+from .providers import setup_providers
 
 logger = logging.getLogger(__name__)
 
 
-def init_api(debug: bool = __debug__) -> FastAPI:
+def init_api(
+    keycloak_config: KeycloakConfig,
+    debug: bool = __debug__,
+) -> FastAPI:
     logger.info("Initializing API")
 
     app = FastAPI(
@@ -22,7 +28,10 @@ def init_api(debug: bool = __debug__) -> FastAPI:
         default_response_class=ORJSONResponse,
     )
 
-    # Initialize routers, middleware, etc. here
+    setup_providers(app, keycloak_config)
+
+    app.include_router(auth_router)
+    app.include_router(user_router)
 
     return app
 
@@ -32,8 +41,7 @@ async def run_api(app: FastAPI, api_config: APIConfig) -> None:
         app,
         host=api_config.host,
         port=api_config.port,
-        log_level=logging.INFO,
-        log_config=None,
+        log_level=logging.DEBUG,
     )
 
     server = uvicorn.Server(uvicorn_config)
@@ -49,7 +57,7 @@ async def main() -> None:
 
     logger.info("Starting application", extra={"config": config})
 
-    app = init_api(config.api.debug)
+    app = init_api(config.keycloak, config.api.debug)
     await run_api(app, config.api)
 
 
