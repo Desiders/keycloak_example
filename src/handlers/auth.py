@@ -4,8 +4,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse
 
+from src.adapters.keycloak import KeycloakClient
 from src.providers import Stub
-from src.providers.keycloak import KeycloakClient
 
 logger = logging.getLogger(__name__)
 

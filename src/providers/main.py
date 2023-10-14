@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 
+from src.adapters.keycloak import KeycloakClient
 from src.config import Keycloak as KeycloakConfig
 
-from .keycloak import KeycloakClient
 from .stub import Stub
 
 

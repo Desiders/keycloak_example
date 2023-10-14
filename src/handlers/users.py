@@ -4,8 +4,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2AuthorizationCodeBearer
 
+from src.adapters.keycloak import KeycloakClient, OIDCUser
 from src.providers import Stub
-from src.providers.keycloak.client import KeycloakClient, OIDCUser
 
 logger = logging.getLogger(__name__)
 
