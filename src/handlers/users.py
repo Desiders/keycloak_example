@@ -27,7 +27,7 @@ async def get_user(
             )
         ),
     ],
-) -> OIDCUser:
+):
     logger.info("Getting user", extra={"access_token": access_token})
 
     user = await keycloak.get_user_by_token(access_token)

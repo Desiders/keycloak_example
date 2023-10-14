@@ -15,7 +15,7 @@ auth_router = APIRouter(
 )
 
 
-@auth_router.get("/login")
+@auth_router.get("/login", response_class=RedirectResponse, status_code=307)
 async def login(
     keycloak: Annotated[KeycloakClient, Depends(Stub(KeycloakClient))],
 ):
@@ -26,7 +26,7 @@ async def login(
     return RedirectResponse(login_url)
 
 
-@auth_router.get("/token")
+@auth_router.get("/token", response_class=RedirectResponse, status_code=307)
 async def token(
     keycloak: Annotated[KeycloakClient, Depends(Stub(KeycloakClient))],
 ):
