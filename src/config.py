@@ -2,6 +2,7 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Callable, MutableMapping
 
 import orjson
 import structlog
@@ -98,6 +99,20 @@ def configure_logging(logging_config: Logging) -> None:
     )
     logging_processors = (structlog.stdlib.ProcessorFormatter.remove_processors_meta,)
 
+    logging_console_processors: tuple[
+        Callable[[Any, str, MutableMapping[str, Any]], MutableMapping[str, Any]],
+        structlog.dev.ConsoleRenderer,
+    ] | tuple[
+        Callable[[Any, str, MutableMapping[str, Any]], MutableMapping[str, Any]],
+        structlog.processors.JSONRenderer,
+    ]
+    logging_file_processors: tuple[
+        Callable[[Any, str, MutableMapping[str, Any]], MutableMapping[str, Any]],
+        structlog.dev.ConsoleRenderer,
+    ] | tuple[
+        Callable[[Any, str, MutableMapping[str, Any]], MutableMapping[str, Any]],
+        structlog.processors.JSONRenderer,
+    ]
     if logging_config.render_json_logs:
         logging_console_processors = (
             *logging_processors,
