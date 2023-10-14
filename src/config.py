@@ -9,7 +9,7 @@ import structlog
 
 @dataclass
 class API:
-    host: str = "127.0.0.1"
+    host: str = "0.0.0.0"
     port: int = 5000
     debug: bool = __debug__
 
@@ -46,7 +46,7 @@ def load_config_from_env() -> Config:
 
     return Config(
         api=API(
-            host=os.environ.get("API_HOST", "127.0.0.1"),
+            host=os.environ.get("API_HOST", "0.0.0.0"),
             port=int(os.environ.get("API_PORT", 5000)),
         ),
         keycloak=Keycloak(
