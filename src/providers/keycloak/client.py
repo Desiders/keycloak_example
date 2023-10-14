@@ -304,7 +304,7 @@ class KeycloakClient:
         """
         openid_configuration = await self.get_openid_configuration()
 
-        authorization_endpoint = openid_configuration.authorization_endpoint
+        url = openid_configuration.authorization_endpoint
 
         params = {
             "client_id": self.client_id,
@@ -313,4 +313,4 @@ class KeycloakClient:
             "redirect_uri": self.callback_url,
         }
 
-        return f"{authorization_endpoint}?{urlencode(params)}"
+        return f"{url}?{urlencode(params)}"

@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse
 
 from src.providers import Stub
@@ -24,6 +24,19 @@ async def login(
     logger.debug("Redirecting to login URL", extra={"login_url": login_url})
 
     return RedirectResponse(login_url)
+
+
+@auth_router.get("/token")
+async def token(
+    keycloak: Annotated[KeycloakClient, Depends(Stub(KeycloakClient))],
+):
+    openid_configuration = await keycloak.get_openid_configuration()
+
+    token_url = openid_configuration.token_endpoint
+
+    logger.debug("Redirecting to token URL", extra={"token_url": token_url})
+
+    return RedirectResponse(token_url)
 
 
 @auth_router.get("/callback")
