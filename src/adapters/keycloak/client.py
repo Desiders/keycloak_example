@@ -298,6 +298,32 @@ class KeycloakClient:
 
         return self.retort.load(json, KeycloakTokens)
 
+    async def refresh_token(self, refresh_token: str) -> KeycloakTokens:
+        """
+        Refresh a token.
+        """
+        openid_configuration = await self.get_openid_configuration()
+
+        url = openid_configuration.token_endpoint
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        data = {
+            "grant_type": "refresh_token",
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "refresh_token": refresh_token,
+        }
+
+        session = self.get_session()
+        response = await session.post(url, data=data, headers=headers)
+        try:
+            response.raise_for_status()
+        finally:
+            await session.close()
+
+        json = await response.json(loads=orjson.loads)
+
+        return self.retort.load(json, KeycloakTokens)
+
     async def get_login_url(self) -> str:
         """
         Get the URL to redirect the user to in order to log in

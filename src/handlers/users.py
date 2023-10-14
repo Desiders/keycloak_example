@@ -1,7 +1,8 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
+from fastapi.responses import ORJSONResponse
 from fastapi.security import OAuth2AuthorizationCodeBearer
 
 from src.adapters.keycloak import KeycloakClient, OIDCUser
@@ -15,7 +16,15 @@ user_router = APIRouter(
 )
 
 
-@user_router.get("/", response_model=OIDCUser)
+@user_router.get(
+    "/",
+    responses={
+        status.HTTP_200_OK: {"model": OIDCUser},
+        status.HTTP_307_TEMPORARY_REDIRECT: {"description": "Redirect to login URL"},
+    },
+    response_class=ORJSONResponse,
+    description="Get logged user info or redirect to login URL",
+)
 async def get_user(
     keycloak: Annotated[KeycloakClient, Depends(Stub(KeycloakClient))],
     access_token: Annotated[
