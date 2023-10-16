@@ -69,19 +69,63 @@ class OpenIDConfiguration:
 
 @dataclass
 class OIDCUser:
-    azp: str | None
+    # `openid` scope (required)
+    iss: str
     sub: str
-    iat: int
+    aud: str
     exp: int
-    scope: str | None
-    email: str | None
-    email_verified: bool
-    name: str | None
-    given_name: str | None
-    family_name: str | None
-    preferred_username: str | None
-    realm_access: dict | None
-    resource_access: dict | None
+    iat: int
+
+    # `openid` scope (optional)
+    auth_time: int | None = None
+    nonce: str | None = None
+    acr: str | None = None
+    amr: list[str] | None = None
+    azp: str | None = None
+
+    # `profile` scope
+    name: str | None = None
+    family_name: str | None = None
+    given_name: str | None = None
+    middle_name: str | None = None
+    nickname: str | None = None
+    preferred_username: str | None = None
+    profile: str | None = None
+    picture: str | None = None
+    website: str | None = None
+    gender: str | None = None
+    birthdate: str | None = None
+    zoneinfo: str | None = None
+    locale: str | None = None
+    updated_at: int | None = None
+
+    # `email` scope
+    email: str | None = None
+    email_verified: bool | None = None
+
+    # `address` scope
+    address: str | dict[str, str] | None = None
+
+    # `phone` scope
+    phone_number: str | None = None
+    phone_number_verified: bool | None = None
+
+    # `offline_access` scope
+    scope: str | None = None
+    realm_access: dict | None = None
+    resource_access: dict | None = None
+
+    @property
+    def scopes(self) -> list[str]:
+        return self.scope.split(" ") if self.scope is not None else []
+
+    @property
+    def realm_roles(self) -> list[str]:
+        return self.realm_access["roles"] if self.realm_access is not None else []
+
+    @property
+    def client_roles(self) -> dict[str, list[str]]:
+        return self.resource_access if self.resource_access is not None else {}
 
 
 @dataclass
@@ -94,6 +138,18 @@ class KeycloakTokens:
     not_before_policy: int
     session_state: str
     scope: str
+
+    @property
+    def scopes(self) -> list[str]:
+        return self.scope.split(" ")
+
+    @property
+    def access_token_claims(self) -> dict[str, Any]:
+        return jwt.get_unverified_claims(self.access_token)
+
+    @property
+    def refresh_token_claims(self) -> dict[str, Any]:
+        return jwt.get_unverified_claims(self.refresh_token)
 
 
 class KeycloakClient:
@@ -224,22 +280,33 @@ class KeycloakClient:
 
         self.public_key = public_key
 
-    async def get_realm_public_key(self) -> str:
+    def wrap_public_key_in_pem_markers(self, public_key: str) -> str:
+        """
+        Wrap the public key in PEM markers.
+        """
+        return f"-----BEGIN PUBLIC KEY-----\n{public_key}\n-----END PUBLIC KEY-----"
+
+    async def get_realm_public_key(self, wrap_in_pem_markers: bool = False) -> str:
         """
         Get the public key for the realm.
         If the public key has not been fetched yet, it will be fetched.
+
+        :param wrap_in_pem_markers: Whether to wrap the public key in PEM markers.
         """
         if self.public_key is None:
             logger.debug("Public key is `None`. Fetching...")
 
             await self.fetch_realm_public_key()
 
+        if wrap_in_pem_markers:
+            return self.wrap_public_key_in_pem_markers(self.public_key)  # type: ignore
+
         return self.public_key  # type: ignore
 
     async def get_access_token_claims(
         self, token: str, audience: str | None
     ) -> dict[str, Any]:
-        public_key = await self.get_realm_public_key()
+        public_key = await self.get_realm_public_key(wrap_in_pem_markers=True)
 
         options = {
             "verify_signature": True,
@@ -261,11 +328,60 @@ class KeycloakClient:
             return False
         return True
 
-    async def get_user_by_token(self, token: str) -> OIDCUser:
+    async def get_user_by_access_token(self, token: str) -> OIDCUser:
         audience = "account"
         claims = await self.get_access_token_claims(token, audience)
 
         return self.retort.load(claims, OIDCUser)
+
+    async def get_authorization_url(self) -> str:
+        """
+        Get the authorization URL with the correct parameters.
+        """
+        openid_configuration = await self.get_openid_configuration()
+
+        url = openid_configuration.authorization_endpoint
+
+        params = {
+            "client_id": self.client_id,
+            "response_type": "code",
+            "redirect_uri": self.callback_url,
+        }
+
+        return f"{url}?{urlencode(params)}"
+
+    async def get_tokens_by_username_and_password(
+        self,
+        username: str,
+        password: str,
+        scopes: list[str] | None = None,
+    ) -> KeycloakTokens:
+        """
+        Get tokens by username and password.
+        """
+        openid_configuration = await self.get_openid_configuration()
+
+        url = openid_configuration.token_endpoint
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        data = {
+            "grant_type": "password",
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "username": username,
+            "password": password,
+            "scope": " ".join(scopes) if scopes is not None else [],
+        }
+
+        session = self.get_session()
+        response = await session.post(url, data=data, headers=headers)
+        try:
+            response.raise_for_status()
+        finally:
+            await session.close()
+
+        json = await response.json(loads=orjson.loads)
+
+        return self.retort.load(json, KeycloakTokens)
 
     async def exchange_authorization_code(
         self, session_state: str, code: str
@@ -298,9 +414,11 @@ class KeycloakClient:
 
         return self.retort.load(json, KeycloakTokens)
 
-    async def refresh_token(self, refresh_token: str) -> KeycloakTokens:
+    async def refresh_tokens(self, refresh_token: str) -> KeycloakTokens:
         """
-        Refresh a token.
+        Refresh tokens.
+        This is used to get new tokens after the access token has expired.
+        If the refresh token has expired, the user will have to log in again.
         """
         openid_configuration = await self.get_openid_configuration()
 
@@ -323,20 +441,3 @@ class KeycloakClient:
         json = await response.json(loads=orjson.loads)
 
         return self.retort.load(json, KeycloakTokens)
-
-    async def get_login_url(self) -> str:
-        """
-        Get the URL to redirect the user to in order to log in
-        """
-        openid_configuration = await self.get_openid_configuration()
-
-        url = openid_configuration.authorization_endpoint
-
-        params = {
-            "client_id": self.client_id,
-            "response_type": "code",
-            # Redirect to the callback URL after logging in
-            "redirect_uri": self.callback_url,
-        }
-
-        return f"{url}?{urlencode(params)}"
