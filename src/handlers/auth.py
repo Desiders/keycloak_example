@@ -16,37 +16,22 @@ auth_router = APIRouter(
 
 
 @auth_router.get(
-    "/login",
+    "/",
     response_class=RedirectResponse,
     status_code=status.HTTP_307_TEMPORARY_REDIRECT,
-    description="Redirect to keycloak login URL",
+    description="Redirect to authorization URL",
 )
 async def login(
     keycloak: Annotated[KeycloakClient, Depends(Stub(KeycloakClient))],
 ) -> str:
-    login_url = await keycloak.get_login_url()
+    authorization_url = await keycloak.get_authorization_url()
 
-    logger.debug("Redirecting to login URL", extra={"login_url": login_url})
+    logger.debug(
+        "Redirecting to authorization URL",
+        extra={"authorization_url": authorization_url},
+    )
 
-    return login_url
-
-
-@auth_router.get(
-    "/token",
-    response_class=RedirectResponse,
-    status_code=status.HTTP_307_TEMPORARY_REDIRECT,
-    description="Redirect to keycloak token URL",
-)
-async def token(
-    keycloak: Annotated[KeycloakClient, Depends(Stub(KeycloakClient))],
-) -> str:
-    openid_configuration = await keycloak.get_openid_configuration()
-
-    token_url = openid_configuration.token_endpoint
-
-    logger.debug("Redirecting to token URL", extra={"token_url": token_url})
-
-    return token_url
+    return authorization_url
 
 
 @auth_router.get(
