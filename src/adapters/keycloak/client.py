@@ -138,6 +138,7 @@ class KeycloakTokens:
     refresh_expires_in: int
     refresh_token: str
     token_type: str
+    id_token: str
     not_before_policy: int
     session_state: str
     scope: str
@@ -337,7 +338,12 @@ class KeycloakClient:
 
         return self.retort.load(claims, IDToken)
 
-    async def get_authorization_url(self) -> str:
+    async def get_authorization_url(
+        self,
+        scope: str = "openid profile email",
+        state: str | None = None,
+        nonce: str | None = None,
+    ) -> str:
         """
         Get the authorization URL with the correct parameters.
         """
@@ -345,10 +351,21 @@ class KeycloakClient:
 
         url = openid_configuration.authorization_endpoint
 
+        optional_params = {
+            "state": state,
+            "nonce": nonce,
+        }
+
         params = {
             "client_id": self.client_id,
             "response_type": "code",
             "redirect_uri": self.callback_url,
+            "scope": scope,
+            **{
+                param: value
+                for param, value in optional_params.items()
+                if value is not None
+            },
         }
 
         return f"{url}?{urlencode(params)}"
@@ -357,7 +374,7 @@ class KeycloakClient:
         self,
         username: str,
         password: str,
-        scopes: list[str] | None = None,
+        scope: str = "openid profile email",
     ) -> KeycloakTokens:
         """
         Get tokens by username and password.
@@ -372,7 +389,7 @@ class KeycloakClient:
             "client_secret": self.client_secret,
             "username": username,
             "password": password,
-            "scope": " ".join(scopes) if scopes is not None else [],
+            "scope": scope,
         }
 
         session = self.get_session()
