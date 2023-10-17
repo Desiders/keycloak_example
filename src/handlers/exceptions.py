@@ -1,15 +1,19 @@
 import logging
 
-from fastapi import HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi import Request, status
+from fastapi.responses import ORJSONResponse
+from jose import JWTError
 
 logger = logging.getLogger(__name__)
 
 
-async def unauthorized_handler(_request: Request, exc: HTTPException):
+async def jwt_exception_handler(_request: Request, exc: JWTError):
     logger.debug(
-        "Unauthorized exception. Redirecting to authorization URL",
-        extra={"exc": exc, "authorization_url": "/auth"},
+        "JWT exception",
+        extra={"exc": exc},
     )
 
-    return RedirectResponse("/auth")
+    return ORJSONResponse(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        content={"detail": str(exc)},
+    )

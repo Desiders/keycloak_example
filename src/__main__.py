@@ -2,13 +2,14 @@ import asyncio
 import logging
 
 import uvicorn
-from fastapi import FastAPI, status
+from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
+from jose import JWTError
 
 from .config import API as APIConfig
 from .config import Keycloak as KeycloakConfig
 from .config import configure_logging, load_config_from_env
-from .handlers import auth_router, tokens_router, unauthorized_handler, user_router
+from .handlers import auth_router, jwt_exception_handler, tokens_router, user_router
 from .providers import setup_providers
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,7 @@ def init_api(
     app.include_router(tokens_router)
     app.include_router(user_router)
 
-    app.add_exception_handler(status.HTTP_401_UNAUTHORIZED, unauthorized_handler)
+    app.add_exception_handler(JWTError, jwt_exception_handler)
 
     return app
 
