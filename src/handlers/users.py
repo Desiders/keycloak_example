@@ -18,7 +18,14 @@ user_router = APIRouter(
 
 @user_router.get(
     "/id-token",
-    response_model=IDToken,
+    responses={
+        status.HTTP_200_OK: {
+            "model": IDToken,
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Invalid access token",
+        },
+    },
     response_class=ORJSONResponse,
     status_code=status.HTTP_200_OK,
     description="Get id token by access token",
