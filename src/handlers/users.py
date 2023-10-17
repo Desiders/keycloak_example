@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import ORJSONResponse
 from fastapi.security import OAuth2PasswordBearer
 
-from src.adapters.keycloak import KeycloakClient, OIDCUser
+from src.adapters.keycloak import IDToken, KeycloakClient
 from src.providers import Stub
 
 logger = logging.getLogger(__name__)
@@ -17,20 +17,20 @@ user_router = APIRouter(
 
 
 @user_router.get(
-    "/",
-    response_model=OIDCUser,
+    "/id-token",
+    response_model=IDToken,
     response_class=ORJSONResponse,
     status_code=status.HTTP_200_OK,
-    description="Get user by access token",
+    description="Get id token by access token",
 )
-async def get_user(
+async def get_id_token(
     keycloak: Annotated[KeycloakClient, Depends(Stub(KeycloakClient))],
     token: Annotated[str, Depends(OAuth2PasswordBearer(tokenUrl="/tokens"))],
-) -> OIDCUser:
-    logger.info("Getting user", extra={"access_token": token})
+) -> IDToken:
+    logger.info("Getting id token", extra={"access_token": token})
 
-    user = await keycloak.get_user_by_access_token(token)
+    id_token = await keycloak.get_id_token_by_access_token(token)
 
-    logger.debug("Got user", extra={"user": user})
+    logger.debug("Got id token", extra={"id_token": id_token})
 
-    return user
+    return id_token

@@ -68,7 +68,7 @@ class OpenIDConfiguration:
 
 
 @dataclass
-class OIDCUser:
+class IDToken:
     # `openid` scope (required)
     iss: str
     sub: str
@@ -78,10 +78,14 @@ class OIDCUser:
 
     # `openid` scope (optional)
     auth_time: int | None = None
-    nonce: str | None = None
     acr: str | None = None
     amr: list[str] | None = None
     azp: str | None = None
+
+    # `openid` scope (optional) and `hybrid` flow
+    nonce: str | None = None
+    at_hash: str | None = None
+    c_hash: str | None = None
 
     # `profile` scope
     name: str | None = None
@@ -110,7 +114,6 @@ class OIDCUser:
     phone_number: str | None = None
     phone_number_verified: bool | None = None
 
-    # `offline_access` scope
     scope: str | None = None
     realm_access: dict | None = None
     resource_access: dict | None = None
@@ -328,11 +331,11 @@ class KeycloakClient:
             return False
         return True
 
-    async def get_user_by_access_token(self, token: str) -> OIDCUser:
+    async def get_id_token_by_access_token(self, token: str) -> IDToken:
         audience = "account"
         claims = await self.get_access_token_claims(token, audience)
 
-        return self.retort.load(claims, OIDCUser)
+        return self.retort.load(claims, IDToken)
 
     async def get_authorization_url(self) -> str:
         """

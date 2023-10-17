@@ -1,1 +1,1 @@
-from .client import KeycloakClient, KeycloakTokens, OIDCUser, OpenIDConfiguration
+from .client import IDToken, KeycloakClient, KeycloakTokens, OpenIDConfiguration
